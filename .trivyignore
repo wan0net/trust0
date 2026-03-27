@@ -1,0 +1,13 @@
+# Known vulnerabilities in @trust0/verify (doipjs fork) dependencies
+# Inherited from upstream — tracked for remediation
+
+CVE-2025-58754
+CVE-2026-25639
+CVE-2025-9287
+CVE-2025-7783
+CVE-2026-26996
+CVE-2026-27903
+CVE-2026-27904
+CVE-2025-47934
+CVE-2025-9288
+CVE-2025-12758

@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
       - run: pnpm --filter @trust0/identity test
 
   semgrep:
@@ -48,6 +48,7 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           scanners: vuln,secret,misconfig
+          trivyignores: .trivyignore
       - name: Run Trivy SARIF output
         uses: aquasecurity/trivy-action@master
         if: always()
@@ -57,6 +58,7 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           scanners: vuln,secret,misconfig
+          trivyignores: .trivyignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:

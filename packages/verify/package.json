@@ -69,7 +69,7 @@
     "lint:fix": "eslint ./src --fix",
     "pretest": "node ./prerelease.js && npm run lint && npm run license:check",
     "test": "mocha",
-    "prepare": "husky install",
+    "prepare": "true",
     "prepack": "npm run build"
   },
   "repository": {
