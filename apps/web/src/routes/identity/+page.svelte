@@ -409,105 +409,133 @@
 	}
 </script>
 
-<div class="page-header">
-	<h1>Identity</h1>
-	<p>Manage your cryptographic identity and verified claims.</p>
-</div>
-
 {#if loading}
-	<p aria-busy="true">Loading identity...</p>
+	<div class="empty-state"><p aria-busy="true">Loading...</p></div>
 {:else if !me}
 	<div class="empty-state">
-		<p>You are not signed in. <a href="/">Sign in</a> to manage your identity.</p>
+		<h2>Sign in to get started</h2>
+		<p>You need to sign in before you can create your identity.</p>
+		<a href="/" style="color: var(--accent);">Go to home page</a>
 	</div>
-{:else if error}
-	<div class="error-state" style="color: var(--red); margin-bottom: 16px;">
-		{error}
-	</div>
-{/if}
+{:else if !identity}
+	<!-- ── Onboarding Step 1: Create your key ──────────────────── -->
+	<div class="onboarding">
+		<div class="onboarding-step">
+			<div class="step-indicator">
+				<span class="step-dot active">1</span>
+				<span class="step-line"></span>
+				<span class="step-dot">2</span>
+				<span class="step-line"></span>
+				<span class="step-dot">3</span>
+			</div>
+			<h1>Create your identity</h1>
+			<p class="onboarding-desc">
+				Your identity is based on a unique cryptographic key generated in your browser.
+				Your private key never leaves your device — not even we can see it.
+			</p>
 
-{#if !loading && me}
-	{#if !identity}
-		<div class="grid">
-			<div class="card">
-				<div class="card-header">Cryptographic Identity</div>
-				<div class="card-body">
-					<p>Generate an Ed25519 key pair. Your private key stays in this browser.</p>
-					<button onclick={handleGenerateKey} aria-busy={generating} disabled={generating}>
-						Generate Identity Key
+			{#if error}
+				<div class="error-state" style="color: var(--red); margin-bottom: 16px;">{error}</div>
+			{/if}
+
+			<button class="cta-btn" onclick={handleGenerateKey} aria-busy={generating} disabled={generating}>
+				{generating ? "Generating..." : "Create My Identity"}
+			</button>
+
+			<div class="onboarding-alt">
+				<p>Already have a backup?</p>
+				{#if !showImport}
+					<button class="outline btn-sm" onclick={() => { showImport = true; importError = null; importData = ""; importPassphrase = ""; }}>
+						Restore from backup
 					</button>
-				</div>
-			</div>
-
-			<div class="card">
-				<div class="card-header">Restore from Backup</div>
-				<div class="card-body">
-					<p style="color: var(--text-dim); font-size: 14px; margin-bottom: 12px;">Already have a key backup? Restore it here.</p>
-					{#if !showImport}
-						<button class="outline btn-sm" onclick={() => { showImport = true; importError = null; importData = ""; importPassphrase = ""; }}>
-							Import Key
-						</button>
-					{:else}
-						<form onsubmit={(e) => { e.preventDefault(); handleImportBackup(); }}>
-							<label>
-								Backup data
-								<textarea bind:value={importData} placeholder="Paste your backup here" rows="4" required style="font-family: monospace; font-size: 11px; word-break: break-all;"></textarea>
-							</label>
-							<label>
-								Passphrase
-								<input type="password" bind:value={importPassphrase} placeholder="Enter passphrase" required />
-							</label>
-							{#if importError}
-								<p style="color: var(--red); font-size: 13px; margin: 8px 0 0;">{importError}</p>
-							{/if}
-							<div style="display: flex; gap: 8px; margin-top: 8px;">
-								<button type="submit" class="btn-sm" aria-busy={importing} disabled={importing || !importData.trim() || !importPassphrase}>
-									Restore
-								</button>
-								<button type="button" class="outline btn-sm secondary" onclick={() => { showImport = false; importError = null; }}>
-									Cancel
-								</button>
-							</div>
-						</form>
-					{/if}
-				</div>
-			</div>
-		</div>
-	{:else if !serverProfile}
-		<div class="grid">
-			<div class="card">
-				<div class="card-header">Your Fingerprint</div>
-				<div class="card-body">
-					<div class="fingerprint-row">
-						<code>{identity.fingerprint}</code>
-						<button class="btn-sm secondary" onclick={copyFingerprint}>Copy</button>
-					</div>
-					<p style="color: var(--amber); font-size: 12px; margin-top: 12px;">
-						Warning: Your private key is stored in this browser only. If you clear browser data, you'll lose access.
-					</p>
-				</div>
-			</div>
-
-			<div class="card">
-				<div class="card-header">Create Profile</div>
-				<div class="card-body">
-					<form onsubmit={(e) => { e.preventDefault(); handleCreateProfile(); }}>
+				{:else}
+					<form onsubmit={(e) => { e.preventDefault(); handleImportBackup(); }} class="import-form">
 						<label>
-							Display Name
-							<input type="text" bind:value={newName} placeholder="Your Name" required />
+							Backup data
+							<textarea bind:value={importData} placeholder="Paste your backup here" rows="3" required style="font-family: monospace; font-size: 11px;"></textarea>
 						</label>
 						<label>
-							Description (Optional)
-							<textarea bind:value={newDescription} placeholder="A short bio"></textarea>
+							Passphrase
+							<input type="password" bind:value={importPassphrase} placeholder="Enter passphrase" required />
 						</label>
-						<button type="submit" aria-busy={creatingProfile} disabled={creatingProfile || !newName.trim()}>
-							Create Profile
-						</button>
+						{#if importError}
+							<p style="color: var(--red); font-size: 13px;">{importError}</p>
+						{/if}
+						<div style="display: flex; gap: 8px;">
+							<button type="submit" class="btn-sm" aria-busy={importing} disabled={importing || !importData.trim() || !importPassphrase}>Restore</button>
+							<button type="button" class="outline btn-sm" onclick={() => { showImport = false; }}>Cancel</button>
+						</div>
 					</form>
-				</div>
+				{/if}
 			</div>
 		</div>
-	{:else}
+	</div>
+{:else if !serverProfile}
+	<!-- ── Onboarding Step 2: Set up your profile ──────────────── -->
+	<div class="onboarding">
+		<div class="onboarding-step">
+			<div class="step-indicator">
+				<span class="step-dot done">✓</span>
+				<span class="step-line done"></span>
+				<span class="step-dot active">2</span>
+				<span class="step-line"></span>
+				<span class="step-dot">3</span>
+			</div>
+			<h1>Set up your profile</h1>
+			<p class="onboarding-desc">
+				Choose a display name. This is what people see when they view your verified identity.
+			</p>
+
+			{#if error}
+				<div class="error-state" style="color: var(--red); margin-bottom: 16px;">{error}</div>
+			{/if}
+
+			<form onsubmit={(e) => { e.preventDefault(); handleCreateProfile(); }} class="profile-form">
+				<label>
+					Your name
+					<input type="text" bind:value={newName} placeholder="Alice Chen" required />
+				</label>
+				<label>
+					Short bio <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
+					<textarea bind:value={newDescription} placeholder="Security researcher, open source maintainer" rows="2"></textarea>
+				</label>
+				<button type="submit" class="cta-btn" aria-busy={creatingProfile} disabled={creatingProfile || !newName.trim()}>
+					{creatingProfile ? "Creating..." : "Create Profile"}
+				</button>
+			</form>
+
+			<p class="onboarding-hint">
+				Your key: <code>{identity.fingerprint.slice(0, 8)}...{identity.fingerprint.slice(-4)}</code>
+			</p>
+		</div>
+	</div>
+{:else}
+	<!-- ── Onboarding Step 3 hint (shown briefly) + Full Dashboard ── -->
+	{#if parsedClaims.length === 0 && !serverProfile.username}
+		<div class="onboarding-banner">
+			<div class="step-indicator" style="margin-bottom: 12px;">
+				<span class="step-dot done">✓</span>
+				<span class="step-line done"></span>
+				<span class="step-dot done">✓</span>
+				<span class="step-line done"></span>
+				<span class="step-dot active">3</span>
+			</div>
+			<p><strong>Profile created!</strong> Now link your accounts to prove you own them. Pick a platform below to add your first proof.</p>
+		</div>
+	{/if}
+
+	<div class="page-header">
+		<h1>My Identity</h1>
+		{#if serverProfile.username}
+			<p><a href="/identity/profile/{serverProfile.username}" style="color: var(--accent);">trust0.app/{serverProfile.username}</a> — share this link to let anyone verify your identity.</p>
+		{:else}
+			<p>Manage your verified accounts and identity settings.</p>
+		{/if}
+	</div>
+
+	{#if error}
+		<div class="error-state" style="color: var(--red); margin-bottom: 16px;">{error}</div>
+	{/if}
 		<div class="grid">
 			<div class="card">
 				<div class="card-header">Profile Info</div>
@@ -830,6 +858,134 @@ git config --global commit.gpgsign true</pre>
 {/if}
 
 <style>
+	/* ── Onboarding ─────────────────────────────── */
+
+	.onboarding {
+		display: flex;
+		justify-content: center;
+		padding: 48px 0;
+	}
+
+	.onboarding-step {
+		max-width: 480px;
+		text-align: center;
+	}
+
+	.onboarding-step h1 {
+		font-size: 1.75rem;
+		font-weight: 700;
+		margin-bottom: 12px;
+	}
+
+	.onboarding-desc {
+		color: var(--text-dim);
+		font-size: 0.95rem;
+		line-height: 1.6;
+		margin-bottom: 28px;
+	}
+
+	.step-indicator {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0;
+		margin-bottom: 24px;
+	}
+
+	.step-dot {
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		border: 2px solid var(--border);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--text-dim);
+	}
+
+	.step-dot.active {
+		border-color: var(--accent);
+		background: var(--accent);
+		color: #000;
+	}
+
+	.step-dot.done {
+		border-color: var(--green);
+		background: var(--green);
+		color: #000;
+	}
+
+	.step-line {
+		width: 40px;
+		height: 2px;
+		background: var(--border);
+	}
+
+	.step-line.done {
+		background: var(--green);
+	}
+
+	.cta-btn {
+		background: var(--accent);
+		color: #000;
+		padding: 12px 32px;
+		border-radius: 8px;
+		font-weight: 600;
+		font-size: 1rem;
+		border: none;
+		cursor: pointer;
+		font-family: var(--font-sans);
+	}
+
+	.cta-btn:hover { opacity: 0.85; }
+	.cta-btn:disabled { opacity: 0.5; cursor: wait; }
+
+	.onboarding-alt {
+		margin-top: 32px;
+		padding-top: 24px;
+		border-top: 1px solid var(--border);
+		color: var(--text-dim);
+		font-size: 0.85rem;
+	}
+
+	.onboarding-alt p { margin-bottom: 8px; }
+
+	.import-form {
+		text-align: left;
+		max-width: 360px;
+		margin: 12px auto 0;
+	}
+
+	.profile-form {
+		text-align: left;
+		max-width: 400px;
+		margin: 0 auto 16px;
+	}
+
+	.onboarding-hint {
+		margin-top: 16px;
+		font-size: 0.8rem;
+		color: var(--text-dim);
+	}
+
+	.onboarding-banner {
+		text-align: center;
+		padding: 24px;
+		margin-bottom: 24px;
+		border: 1px solid var(--accent);
+		border-radius: 12px;
+		background: rgba(0, 212, 170, 0.05);
+	}
+
+	.onboarding-banner p {
+		font-size: 0.9rem;
+		color: var(--text-dim);
+	}
+
+	/* ── Dashboard ──────────────────────────────── */
+
 	.fingerprint-row {
 		display: flex;
 		align-items: center;
