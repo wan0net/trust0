@@ -5,7 +5,7 @@
 		getStoredIdentity, fetchMyProfile, updateProfile, appendAfterAction, fetchChain,
 		type MyProfile, type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -53,7 +53,7 @@
 	}
 
 	async function copyProofText() {
-		if (identity) await navigator.clipboard.writeText(`aspe:login2.link42.app:${identity.fingerprint}`);
+		if (identity) await navigator.clipboard.writeText(`aspe:trust0.app:${identity.fingerprint}`);
 	}
 </script>
 
@@ -90,7 +90,7 @@
 			<div class="card-body">
 				<p>If your Keybase account is still active, add this text to your Keybase profile or a signed statement:</p>
 				<div class="proof-box">
-					<code>aspe:login2.link42.app:{identity.fingerprint}</code>
+					<code>aspe:trust0.app:{identity.fingerprint}</code>
 					<button class="btn-sm secondary" onclick={copyProofText}>Copy</button>
 				</div>
 				<p style="color: var(--text-dim); font-size: 13px; margin-top: 12px;">

@@ -10,7 +10,7 @@
 		type MyProfile,
 		type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -83,7 +83,7 @@
 
 	async function copyProofText() {
 		if (identity) {
-			await navigator.clipboard.writeText(`aspe:login2.link42.app:${identity.fingerprint}`);
+			await navigator.clipboard.writeText(`aspe:trust0.app:${identity.fingerprint}`);
 		}
 	}
 </script>
@@ -131,7 +131,7 @@
 			<div class="card-body">
 				<p>Paste this text into your Mastodon profile bio:</p>
 				<div class="proof-box">
-					<code>aspe:login2.link42.app:{identity.fingerprint}</code>
+					<code>aspe:trust0.app:{identity.fingerprint}</code>
 					<button class="btn-sm secondary" onclick={copyProofText}>Copy</button>
 				</div>
 				<p style="margin-top: 12px; font-size: 0.9em; color: var(--text-muted);">

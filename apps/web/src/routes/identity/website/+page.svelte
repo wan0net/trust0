@@ -10,7 +10,7 @@
 		type MyProfile,
 		type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -82,7 +82,7 @@
 
 	async function copyProofText() {
 		if (identity) {
-			await navigator.clipboard.writeText(`aspe:login2.link42.app:${identity.fingerprint}`);
+			await navigator.clipboard.writeText(`aspe:trust0.app:${identity.fingerprint}`);
 		}
 	}
 </script>
@@ -133,17 +133,17 @@
 				<h4 style="margin-top: 16px; margin-bottom: 8px;">Option A: Well-Known File</h4>
 				<p>Create a file at <code>/.well-known/openpgp/proof</code> on your website containing:</p>
 				<div class="proof-box">
-					<code>aspe:login2.link42.app:{identity.fingerprint}</code>
+					<code>aspe:trust0.app:{identity.fingerprint}</code>
 					<button class="btn-sm secondary" onclick={copyProofText}>Copy</button>
 				</div>
 
 				<h4 style="margin-top: 20px; margin-bottom: 8px;">Option B: Meta Tag</h4>
 				<p>Add this meta tag to the <code>&lt;head&gt;</code> of your homepage:</p>
 				<div class="proof-box">
-					<code>&lt;meta name="ariadne-id" content="aspe:login2.link42.app:{identity.fingerprint}"&gt;</code>
+					<code>&lt;meta name="ariadne-id" content="aspe:trust0.app:{identity.fingerprint}"&gt;</code>
 					<button class="btn-sm secondary" onclick={async () => {
 						if (identity) {
-							await navigator.clipboard.writeText(`<meta name="ariadne-id" content="aspe:login2.link42.app:${identity.fingerprint}">`);
+							await navigator.clipboard.writeText(`<meta name="ariadne-id" content="aspe:trust0.app:${identity.fingerprint}">`);
 						}
 					}}>Copy</button>
 				</div>

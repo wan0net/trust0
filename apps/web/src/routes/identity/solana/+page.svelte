@@ -5,7 +5,7 @@
 		getStoredIdentity, fetchMyProfile, updateProfile, appendAfterAction, fetchChain,
 		type MyProfile, type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -55,7 +55,7 @@
 		if (!identity || !solAddress) return;
 		signing = true; error = null;
 		try {
-			const message = `I am verifying my identity.\n\naspe:login2.link42.app:${identity.fingerprint}\nsolana:${solAddress}`;
+			const message = `I am verifying my identity.\n\naspe:trust0.app:${identity.fingerprint}\nsolana:${solAddress}`;
 			const encodedMessage = new TextEncoder().encode(message);
 
 			const solana = (window as any).solana;

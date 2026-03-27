@@ -5,7 +5,7 @@
 		getStoredIdentity, fetchMyProfile, updateProfile, appendAfterAction, fetchChain,
 		type MyProfile, type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -59,11 +59,11 @@
 			const nostr = (window as any).nostr;
 
 			// Create a Nostr event (kind 1 = text note) containing the cross-signature
-			const content = `Verifying my identity: aspe:login2.link42.app:${identity.fingerprint}`;
+			const content = `Verifying my identity: aspe:trust0.app:${identity.fingerprint}`;
 			const event = {
 				kind: 1,
 				content,
-				tags: [["i", `aspe:login2.link42.app:${identity.fingerprint}`, "identity"]],
+				tags: [["i", `aspe:trust0.app:${identity.fingerprint}`, "identity"]],
 				created_at: Math.floor(Date.now() / 1000),
 			};
 

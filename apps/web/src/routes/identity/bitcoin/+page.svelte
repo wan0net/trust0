@@ -5,7 +5,7 @@
 		getStoredIdentity, fetchMyProfile, updateProfile, appendAfterAction, fetchChain,
 		type MyProfile, type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -22,7 +22,7 @@
 
 	$effect(() => {
 		if (identity) {
-			proofMessage = `I am verifying my identity.\n\naspe:login2.link42.app:${identity.fingerprint}`;
+			proofMessage = `I am verifying my identity.\n\naspe:trust0.app:${identity.fingerprint}`;
 		}
 	});
 

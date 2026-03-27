@@ -10,7 +10,7 @@
 		type MyProfile,
 		type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8788";
 

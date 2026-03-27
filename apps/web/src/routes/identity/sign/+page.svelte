@@ -17,7 +17,7 @@
 		computeFingerprint,
 		type SignatureBundle,
 		type VerifiedSignature,
-	} from "@link42/identity";
+	} from "@trust0/identity";
 	import { encode as base64urlEncode } from "jose/base64url";
 
 	let me = $state<MeResponse | null>(null);
@@ -78,7 +78,7 @@
 				key: identity.privateKey,
 				publicJWK: identity.publicJWK,
 				fingerprint: identity.fingerprint,
-				aspeUri: `aspe:login2.link42.app:${identity.fingerprint}`,
+				aspeUri: `aspe:trust0.app:${identity.fingerprint}`,
 			});
 
 			// Submit to Rekor transparency log for timestamping

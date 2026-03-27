@@ -21,7 +21,7 @@
 		type MyProfile,
 		type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -110,7 +110,7 @@
 			try {
 				// @ts-ignore — qrcode-svg has no type declarations
 				const QRCode = (await import("qrcode-svg")).default;
-				const profileUrl = `https://login2.link42.app/identity/profile/${serverProfile.username || identity!.fingerprint}`;
+				const profileUrl = `https://trust0.app/identity/profile/${serverProfile.username || identity!.fingerprint}`;
 				const qr = new QRCode({ content: profileUrl, width: 128, height: 128, padding: 0, join: true });
 				qrSvg = qr.svg();
 			} catch { /* QR generation is supplementary */ }
@@ -318,7 +318,7 @@
 		error = null;
 		try {
 			const fullJwk = await crypto.subtle.exportKey("jwk", identity.privateKey);
-			const { keyToMnemonic } = await import("@link42/identity");
+			const { keyToMnemonic } = await import("@trust0/identity");
 			paperKeyWords = keyToMnemonic(fullJwk);
 			showPaperKey = true;
 		} catch (e) {
@@ -328,7 +328,7 @@
 
 	async function handleExportSshKey() {
 		if (!identity) return;
-		const { jwkToSshPublicKey } = await import("@link42/identity");
+		const { jwkToSshPublicKey } = await import("@trust0/identity");
 		sshPublicKey = jwkToSshPublicKey(identity.publicJWK, `identity-${identity.fingerprint.slice(0, 8)}`);
 		showSshKey = true;
 	}

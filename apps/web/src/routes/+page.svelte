@@ -41,7 +41,7 @@
 
 <div class="login-page">
 	<div class="landing-logo">
-		<img src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'} alt="login2" />
+		<img src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'} alt="trust0" />
 	</div>
 	<div class="login-card">
 		{#if loading}

@@ -5,7 +5,7 @@
 		getStoredIdentity, fetchMyProfile, updateProfile, appendAfterAction, fetchChain,
 		type MyProfile, type StoredIdentity
 	} from "$lib/identity";
-	import { parseProfile } from "@link42/identity";
+	import { parseProfile } from "@trust0/identity";
 
 	let me = $state<MeResponse | null>(null);
 	let identity = $state<StoredIdentity | null>(null);
@@ -59,7 +59,7 @@
 
 		try {
 			// Message the user signs with their ETH wallet
-			const message = `I am verifying my identity.\n\naspe:login2.link42.app:${identity.fingerprint}\nethereum:${ethAddress}`;
+			const message = `I am verifying my identity.\n\naspe:trust0.app:${identity.fingerprint}\nethereum:${ethAddress}`;
 
 			// Request signature from wallet (personal_sign)
 			const signature = await (window as any).ethereum.request({
@@ -160,7 +160,7 @@
 					<div class="proof-box" style="margin-bottom: 12px;">
 						<div style="font-size: 12px; font-family: monospace; white-space: pre-wrap; word-break: break-all;">I am verifying my identity.
 
-aspe:login2.link42.app:{identity.fingerprint}
+aspe:trust0.app:{identity.fingerprint}
 ethereum:{ethAddress}</div>
 					</div>
 					<button onclick={handleSignAndAdd} aria-busy={signing || adding} disabled={signing || adding}>

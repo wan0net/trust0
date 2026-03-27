@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { page } from "$app/state";
-	import { parseProfile, verifyChain, type ChainState } from "@link42/identity";
+	import { parseProfile, verifyChain, type ChainState } from "@trust0/identity";
 	import { Claim, enums } from "doipjs";
 	import { fetchChain, fetchIdentityById, type ChainResponse } from "$lib/identity";
 
@@ -163,7 +163,7 @@
 				if (!res.ok) return { uri, service: "Email", status: "failed", detail: "No email attestation found" };
 				const data = await res.json() as { attested: boolean };
 				if (data.attested) {
-					return { uri, service: "Email", status: "verified", detail: "Attested by login2 server" };
+					return { uri, service: "Email", status: "verified", detail: "Attested by trust0" };
 				}
 				return { uri, service: "Email", status: "failed", detail: "Email does not match attestation" };
 			} catch {
@@ -239,18 +239,18 @@
 
 <svelte:head>
 	{#if profileName}
-		<title>{profileName}'s Identity — link42</title>
+		<title>{profileName}'s Identity — trust0</title>
 		<meta name="description" content={profileDescription || `Verified cryptographic identity for ${profileName}`} />
 		<meta property="og:title" content={`${profileName}'s Verified Identity`} />
 		<meta property="og:description" content={profileDescription || `Cryptographic identity with ${claims.length} verified claims`} />
 		<meta property="og:type" content="profile" />
-		<meta property="og:url" content={`https://login2.link42.app/identity/profile/${page.params.id}`} />
-		<meta property="og:site_name" content="link42 Identity" />
+		<meta property="og:url" content={`https://trust0.app/identity/profile/${page.params.id}`} />
+		<meta property="og:site_name" content="trust0" />
 		<meta name="twitter:card" content="summary" />
 		<meta name="twitter:title" content={`${profileName}'s Verified Identity`} />
 		<meta name="twitter:description" content={profileDescription || `Cryptographic identity with ${claims.length} verified claims`} />
 	{:else}
-		<title>Identity Profile — link42</title>
+		<title>Identity Profile — trust0</title>
 	{/if}
 </svelte:head>
 

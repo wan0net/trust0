@@ -6,7 +6,7 @@ import {
 	createProfile,
 	createRequest,
 	generateIdentityKey,
-} from "@link42/identity";
+} from "@trust0/identity";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8788";
 
@@ -19,7 +19,7 @@ export interface StoredIdentity {
 	fingerprint: string;
 }
 
-const DB_NAME = "link42_identity";
+const DB_NAME = "trust0_identity";
 const STORE_NAME = "keys";
 const KEY_ID = "primary";
 
