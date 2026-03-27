@@ -37,6 +37,7 @@
 	let chainVerified = $state<boolean | null>(null);
 	let attestations = $state<Attestation[]>([]);
 	let qrSvg = $state("");
+	let showQr = $state(false);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -254,75 +255,59 @@
 	{/if}
 </svelte:head>
 
-<div class="page-header">
-	<h1>{profileName ? `${profileName}'s Identity` : 'Identity Profile'}</h1>
-	<p>Cryptographic identity profile</p>
-</div>
-
 {#if loading}
-	<p aria-busy="true">Loading profile...</p>
+	<div class="empty-state"><p aria-busy="true">Loading profile...</p></div>
 {:else if error}
-	<div class="error-state" style="color: var(--red); margin-bottom: 16px;">
-		{error}
+	<div class="empty-state">
+		<h2>Profile not found</h2>
+		<p style="color: var(--text-dim);">{error}</p>
 	</div>
 {:else}
-	<div class="grid">
-		<div class="card" style={profileColor ? `border-top: 3px solid ${profileColor}` : ""}>
-			<div class="card-header">Profile Info</div>
-			<div class="card-body">
-				{#if profileAvatarUrl}
-					<div class="profile-detail" style="text-align: center;">
-						<img src={profileAvatarUrl} alt="{profileName}'s avatar" class="profile-avatar" />
-					</div>
-				{/if}
+	<!-- ── Profile Header ──────────────────────────── -->
+	<div class="profile-hero" style={profileColor ? `border-top: 3px solid ${profileColor}` : ""}>
+		{#if profileAvatarUrl}
+			<img src={profileAvatarUrl} alt="" class="profile-avatar" />
+		{:else}
+			<div class="profile-avatar-placeholder">{profileName.charAt(0).toUpperCase()}</div>
+		{/if}
 
-				<div class="profile-detail">
-					<strong>Fingerprint</strong>
-					<div class="fingerprint-row">
-						<code>{fingerprint}</code>
-						<button class="btn-sm secondary" onclick={copyFingerprint}>Copy</button>
-					</div>
-				</div>
+		<h1 class="profile-name">{profileName}</h1>
 
-				<div class="profile-detail">
-					<strong>Name</strong>
-					<div>{profileName}</div>
-				</div>
+		{#if username}
+			<p class="profile-handle">@{username}</p>
+		{/if}
 
-				{#if username}
-					<div class="profile-detail">
-						<strong>Username</strong>
-						<div>@{username}</div>
-					</div>
-				{/if}
+		{#if profileDescription}
+			<p class="profile-bio">{profileDescription}</p>
+		{/if}
 
-				{#if profileDescription}
-					<div class="profile-detail">
-						<strong>Description</strong>
-						<div>{profileDescription}</div>
-					</div>
-				{/if}
-
-				{#if profileColor}
-					<div class="profile-detail">
-						<strong>Theme Color</strong>
-						<div style="display: flex; align-items: center; gap: 8px;">
-							<span style="display: inline-block; width: 20px; height: 20px; border-radius: 4px; background: {profileColor};"></span>
-							<code>{profileColor}</code>
-						</div>
-					</div>
-				{/if}
-
-				{#if qrSvg}
-					<div class="qr-section">
-						<div class="qr-code">
-							{@html qrSvg}
-						</div>
-						<p class="qr-label">Scan to view profile</p>
-					</div>
-				{/if}
-			</div>
+		<div class="profile-meta">
+			<span class="meta-item" title={fingerprint}>
+				🔑 <code onclick={copyFingerprint} style="cursor: pointer;">{fingerprint.slice(0, 8)}...{fingerprint.slice(-4)}</code>
+			</span>
+			{#if chainState}
+				<span class="meta-item">🔗 {chainState.links.length} chain links</span>
+			{/if}
 		</div>
+
+		<div class="profile-actions">
+			<button class="btn-sm" onclick={() => {
+				const url = window.location.href;
+				navigator.clipboard.writeText(url);
+			}}>Share Profile</button>
+			{#if qrSvg}
+				<button class="btn-sm outline" onclick={() => { showQr = !showQr; }}>{showQr ? 'Hide QR' : 'Show QR'}</button>
+			{/if}
+		</div>
+
+		{#if showQr && qrSvg}
+			<div class="qr-section">
+				<div class="qr-code">{@html qrSvg}</div>
+			</div>
+		{/if}
+	</div>
+
+	<!-- ── Verified Accounts ───────────────────────── -->
 
 		<div class="card">
 			<div class="card-header">Verified Claims</div>
@@ -421,6 +406,103 @@
 {/if}
 
 <style>
+	/* ── Profile Hero ───────────────────────────── */
+
+	.profile-hero {
+		text-align: center;
+		padding: 48px 24px 32px;
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		background: var(--bg-subtle);
+		margin-bottom: 24px;
+	}
+
+	.profile-avatar {
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		object-fit: cover;
+		margin-bottom: 16px;
+	}
+
+	.profile-avatar-placeholder {
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		background: var(--accent);
+		color: #000;
+		font-size: 2rem;
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0 auto 16px;
+	}
+
+	.profile-name {
+		font-size: 1.75rem;
+		font-weight: 700;
+		margin-bottom: 4px;
+	}
+
+	.profile-handle {
+		color: var(--accent);
+		font-size: 1rem;
+		margin-bottom: 8px;
+	}
+
+	.profile-bio {
+		color: var(--text-dim);
+		max-width: 480px;
+		margin: 0 auto 16px;
+		font-size: 0.9rem;
+		line-height: 1.6;
+	}
+
+	.profile-meta {
+		display: flex;
+		gap: 16px;
+		justify-content: center;
+		flex-wrap: wrap;
+		margin-bottom: 16px;
+		font-size: 0.8rem;
+		color: var(--text-dim);
+	}
+
+	.meta-item code {
+		font-size: 0.75rem;
+	}
+
+	.profile-actions {
+		display: flex;
+		gap: 8px;
+		justify-content: center;
+	}
+
+	.qr-section {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-top: 16px;
+		padding-top: 16px;
+		border-top: 1px solid var(--border);
+	}
+
+	.qr-code {
+		background: white;
+		padding: 8px;
+		border-radius: 8px;
+		display: inline-block;
+	}
+
+	.qr-code :global(svg) {
+		width: 128px;
+		height: 128px;
+		display: block;
+	}
+
+	/* ── Legacy styles (still used in claims section) ── */
+
 	.fingerprint-row {
 		display: flex;
 		align-items: center;
