@@ -1,0 +1,9 @@
+{
+  "name": "trust0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "pnpm -r test",
+    "check": "pnpm -r check"
+  }
+}

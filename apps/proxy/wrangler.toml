@@ -1,0 +1,6 @@
+name = "identity-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173,https://login2.link42.app"

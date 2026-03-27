@@ -1,0 +1,8 @@
+export { generateIdentityKey, computeFingerprint } from "./keys.js";
+export { createProfile, parseProfile, createRequest, parseRequest } from "./profile.js";
+export { createChainLink, parseChainLink, computeLinkHash, computeIdentityId, verifyChain } from "./chain.js";
+export type { ChainLinkType, ChainLinkParams, ParsedChainLink, ChainState } from "./chain.js";
+export { signDocument, verifyDocumentSignature, submitToRekor, jwkToPublicKeyPem, mergeSignatures, verifyMultiSignature } from "./signing.js";
+export type { SignatureBundle, SignDocumentParams, VerifiedSignature, RekorTimestamp, MultiSignatureBundle } from "./signing.js";
+export { jwkToSshPublicKey, gitSigningConfig } from "./ssh.js";
+export { keyToMnemonic, mnemonicToKey, isValidMnemonic } from "./mnemonic.js";

@@ -1,0 +1,24 @@
+{
+  "name": "@trust0/identity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@scure/bip39": "^1.5.0",
+    "jose": "^6.0.0",
+    "rfc4648": "^1.5.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}
