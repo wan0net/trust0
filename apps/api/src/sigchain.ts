@@ -3,7 +3,7 @@ import {
 	computeLinkHash,
 	type ParsedChainLink,
 	parseChainLink,
-} from "@link42/identity";
+} from "@trust0/identity";
 import { asc, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as schema from "./db/schema";

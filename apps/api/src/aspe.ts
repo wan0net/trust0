@@ -1,4 +1,4 @@
-import { computeFingerprint, parseProfile, parseRequest } from "@link42/identity";
+import { computeFingerprint, parseProfile, parseRequest } from "@trust0/identity";
 import { compactVerify, decodeProtectedHeader, importJWK, type JWK } from "jose";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -406,7 +406,7 @@ aspe.post("/api/identity/email/challenge", requireAuth, async (c) => {
 
 	const { Resend } = await import("resend");
 	const resend = new Resend(c.env.RESEND_API_KEY);
-	const from = c.env.EMAIL_FROM || "Identity <noreply@wan0.net>";
+	const from = c.env.EMAIL_FROM || "trust0 <noreply@trust0.app>";
 
 	await resend.emails.send({
 		from,
@@ -506,7 +506,7 @@ aspe.post("/api/identity/email/verify", requireAuth, async (c) => {
 			fingerprint,
 			type: "email",
 			value: user.email!,
-			attestedBy: "login2.link42.app",
+			attestedBy: "trust0.app",
 			attestedAt: now,
 			expiresAt: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000),
 		})
@@ -640,7 +640,7 @@ aspe.post("/api/identity/attest-bot", async (c) => {
 			platformUserId: body.platformUserId,
 			platformUsername: body.platformUsername,
 			value: body.platformUsername,
-			attestedBy: "login2.link42.app",
+			attestedBy: "trust0.app",
 			attestedAt: now,
 		})
 		.onConflictDoUpdate({

@@ -83,7 +83,7 @@ Five representative users of the cryptographic identity platform, covering diffe
 - Discord (server-attested) — active in art commission servers
 - Telegram (server-attested) — where clients contact him
 
-**Key behavior:** 100% web app user. Will never touch a CLI. The passphrase-encrypted backup is essential — he'll lose the key otherwise. Wants a simple, shareable profile URL (login2.link42.app/alexnovak) that he can put in his bio everywhere. The vanity username is his most valued feature.
+**Key behavior:** 100% web app user. Will never touch a CLI. The passphrase-encrypted backup is essential — he'll lose the key otherwise. Wants a simple, shareable profile URL (trust0.app/alexnovak) that he can put in his bio everywhere. The vanity username is his most valued feature.
 
 **Quote:** "I just need people to know the real me from the fakes."
 
