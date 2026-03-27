@@ -1,0 +1,11 @@
+name = "identity-telegram-bot"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+LOGIN2_API_URL = "http://localhost:8788"
+
+# Secrets (set via `wrangler secret put`):
+# TELEGRAM_BOT_TOKEN
+# TELEGRAM_WEBHOOK_SECRET
+# BOT_API_KEY

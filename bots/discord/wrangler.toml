@@ -1,0 +1,12 @@
+name = "identity-discord-bot"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+LOGIN2_API_URL = "http://localhost:8788"
+
+# Secrets (set via `wrangler secret put`):
+# DISCORD_PUBLIC_KEY
+# DISCORD_APP_ID
+# DISCORD_BOT_TOKEN
+# BOT_API_KEY

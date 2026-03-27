@@ -1,0 +1,21 @@
+name = "trust0-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "trust0-db"
+database_id = "" # Fill in after: wrangler d1 create trust0-db
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173,https://trust0.app"
+AUTH_URL = "https://trust0.app"
+ASPE_DOMAIN = "trust0.app"
+
+# Secrets (set via wrangler secret put):
+# AUTH_SECRET
+# GITHUB_CLIENT_ID
+# GITHUB_CLIENT_SECRET
+# RESEND_API_KEY
+# EMAIL_FROM
+# BOT_API_KEY

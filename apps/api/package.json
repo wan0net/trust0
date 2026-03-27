@@ -1,0 +1,26 @@
+{
+	"name": "@trust0/api",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "wrangler dev",
+		"deploy": "wrangler deploy",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate:local": "wrangler d1 migrations apply trust0-db --local",
+		"db:migrate:remote": "wrangler d1 migrations apply trust0-db --remote"
+	},
+	"dependencies": {
+		"@trust0/identity": "workspace:*",
+		"better-auth": "^1.2.0",
+		"drizzle-orm": "^0.38.0",
+		"hono": "^4.7.0",
+		"jose": "^6.0.0",
+		"resend": "^4.0.0"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20241230.0",
+		"drizzle-kit": "^0.30.0",
+		"wrangler": "^4.14.0"
+	}
+}
