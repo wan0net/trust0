@@ -11,7 +11,7 @@
 	},
 	"dependencies": {
 		"@trust0/identity": "workspace:*",
-		"doipjs": "^2.1.0",
+		"@trust0/verify": "workspace:*",
 		"@sveltejs/adapter-cloudflare": "^7.0.0",
 		"@sveltejs/kit": "^2.19.0",
 		"qrcode-svg": "^1.1.0",

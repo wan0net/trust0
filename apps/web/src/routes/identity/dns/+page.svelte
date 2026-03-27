@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { getMe, type MeResponse } from "$lib/api";
-	import { Claim, enums } from "doipjs";
+	import { Claim, enums } from "@trust0/verify";
 	import {
 		getStoredIdentity,
 		fetchMyProfile,

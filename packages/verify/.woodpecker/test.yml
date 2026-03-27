@@ -1,0 +1,8 @@
+when:
+  event: [push, pull_request, tag, release, manual]
+steps:
+  test:
+    image: node:20
+    commands:
+      - npm ci
+      - npm test

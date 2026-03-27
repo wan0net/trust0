@@ -2,7 +2,7 @@
 	import { onMount } from "svelte";
 	import { page } from "$app/state";
 	import { parseProfile, verifyChain, type ChainState } from "@trust0/identity";
-	import { Claim, enums } from "doipjs";
+	import { Claim, enums } from "@trust0/verify";
 	import { fetchChain, fetchIdentityById, type ChainResponse } from "$lib/identity";
 
 	const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8788";

@@ -1,0 +1,40 @@
+{
+  "plugins": [
+    "plugins/markdown",
+    "node_modules/jsdoc-tsimport-plugin"
+  ],
+  "source": {
+    "include": ["./src", "./README.md"]
+  },
+  "recurseDepth": 2,
+  "templates": {
+    "default": {
+      "staticFiles": {
+        "include": ["./static"]
+      }
+    }
+  },
+  "opts": {
+    "template": "node_modules/docdash",
+    "destination": "docs/"
+  },
+  "docdash": {
+    "collapse": true,
+    "meta": {
+      "title": "doipjs",
+      "description": "Documentation for the doip.js library"
+    },
+    "menu": {
+      "Keyoxide": {
+        "href":"https://keyoxide.org",
+        "target":"_blank",
+        "class":"menu-item"
+      },
+      "Keyoxide docs": {
+        "href":"https://docs.keyoxide.org",
+        "target":"_blank",
+        "class":"menu-item"
+      }
+    }
+  }
+}

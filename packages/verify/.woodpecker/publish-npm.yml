@@ -1,0 +1,14 @@
+when:
+  event: release
+  evaluate: 'CI_COMMIT_PRERELEASE != "true"'
+steps:
+  publish:
+    image: node:20
+    commands:
+      - npm ci
+      - npm config set -- '//registry.npmjs.org/:_authToken' "$npm_token"
+      - npm publish --verbose
+    secrets: [ npm_token ]
+
+depends_on:
+  - test
