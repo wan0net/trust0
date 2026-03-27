@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>trust0 — Documentation</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>body{font-family:"Geist",system-ui,sans-serif}code,pre{font-family:"Geist Mono",var(--font-mono)}</style>
+</head>
+<body>
+<nav class="topnav"><div class="topnav-inner">
+  <a href="/trust0/" class="topnav-logo">trust<span style="color:var(--trust0-accent)">0</span></a>
+  <div class="topnav-links">
+    <a href="/trust0/docs/">Docs</a>
+    <a href="https://github.com/wan0net/trust0">GitHub</a>
+  </div>
+</div></nav>
+<div class="site-wrapper">
+<aside class="sidebar"><div class="sidebar-inner">
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Getting Started</div>
+    <a href="/trust0/docs/" class="sidebar-link active">Overview</a>
+    <a href="https://github.com/wan0net/trust0/blob/main/docs/how-it-works.md" class="sidebar-link">How It Works</a>
+    <a href="https://github.com/wan0net/trust0/blob/main/docs/architecture.md" class="sidebar-link">Architecture</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Specifications</div>
+    <a href="https://github.com/wan0net/trust0/blob/main/docs/spec/ariadne-core-v0.md" class="sidebar-link">Ariadne Core v0</a>
+    <a href="https://github.com/wan0net/trust0/blob/main/docs/spec/ariadne-asp-v0.md" class="sidebar-link">ASP / ASPE Protocol</a>
+    <a href="https://github.com/wan0net/trust0/blob/main/docs/spec/sigchain.md" class="sidebar-link">Sigchain (trust0)</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Guides</div>
+    <a href="https://github.com/wan0net/trust0/blob/main/docs/testing-interop.md" class="sidebar-link">Keyoxide Interop</a>
+    <a href="https://github.com/wan0net/trust0#deploy-your-own" class="sidebar-link">Deploy Your Own</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-heading">Reference</div>
+    <a href="https://github.com/wan0net/trust0/tree/main/packages/identity" class="sidebar-link">@trust0/identity</a>
+    <a href="https://github.com/wan0net/trust0/tree/main/packages/verify" class="sidebar-link">@trust0/verify</a>
+  </div>
+</div></aside>
+<main class="main-content">
+<h1>trust0 Documentation</h1>
+<p style="font-size:1.1rem;color:var(--text-dim);margin-bottom:32px">
+  Cryptographic identity verification. Prove that person X owns account X.
+</p>
+<div class="cards">
+  <a href="https://github.com/wan0net/trust0/blob/main/docs/how-it-works.md" class="card">
+    <div class="card-icon">🔑</div><div class="card-title">How It Works</div>
+    <div class="card-desc">Ed25519 keys, bidirectional proofs, sigchains, and client-side verification.</div>
+  </a>
+  <a href="https://github.com/wan0net/trust0/blob/main/docs/architecture.md" class="card">
+    <div class="card-icon">🏗</div><div class="card-title">Architecture</div>
+    <div class="card-desc">System components, packages, verification flow, and data portability.</div>
+  </a>
+  <a href="https://github.com/wan0net/trust0/blob/main/docs/spec/ariadne-core-v0.md" class="card">
+    <div class="card-icon">📋</div><div class="card-title">Ariadne Spec</div>
+    <div class="card-desc">The identity specification we adopt and extend.</div>
+  </a>
+  <a href="https://github.com/wan0net/trust0/blob/main/docs/spec/sigchain.md" class="card">
+    <div class="card-icon">🔗</div><div class="card-title">Sigchain Spec</div>
+    <div class="card-desc">Our append-only chain — key rotation, revocation, identity history.</div>
+  </a>
+  <a href="https://github.com/wan0net/trust0/blob/main/docs/testing-interop.md" class="card">
+    <div class="card-icon">🤝</div><div class="card-title">Keyoxide Interop</div>
+    <div class="card-desc">How to test against Keyoxide for spec compliance.</div>
+  </a>
+  <a href="https://github.com/wan0net/trust0#deploy-your-own" class="card">
+    <div class="card-icon">🚀</div><div class="card-title">Deploy Your Own</div>
+    <div class="card-desc">Fork and deploy to Cloudflare in 10 minutes.</div>
+  </a>
+</div>
+<h2 style="margin-top:48px">Quick Start</h2>
+<pre><code>git clone https://github.com/wan0net/trust0.git
+cd trust0
+pnpm install
+pnpm --filter @trust0/identity test    # 88 tests
+pnpm --filter @trust0/api dev          # API on :8788
+pnpm --filter @trust0/web dev          # Web on :5173</code></pre>
+<h2 style="margin-top:32px">Packages</h2>
+<table>
+<thead><tr><th>Package</th><th>Description</th><th>License</th></tr></thead>
+<tbody>
+<tr><td><code>@trust0/identity</code></td><td>Keys, profiles, sigchain, signing, SSH, BIP39</td><td>Apache-2.0</td></tr>
+<tr><td><code>@trust0/verify</code></td><td>Proof verification (31 providers, doipjs fork)</td><td>Apache-2.0</td></tr>
+<tr><td><code>@trust0/api</code></td><td>Hono API Worker</td><td>AGPL-3.0</td></tr>
+<tr><td><code>@trust0/web</code></td><td>SvelteKit frontend</td><td>AGPL-3.0</td></tr>
+<tr><td><code>@trust0/proxy</code></td><td>CORS proxy Worker</td><td>AGPL-3.0</td></tr>
+</tbody></table>
+<p style="margin-top:32px;color:var(--text-dim);font-size:0.85rem">
+  Built on <a href="https://ariadne.id">Ariadne</a>. Compatible with <a href="https://keyoxide.org">Keyoxide</a>.
+  Verification via <a href="https://codeberg.org/keyoxide/doipjs">doipjs</a> (forked as @trust0/verify).
+</p>
+<div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);color:var(--text-dim);font-size:0.85rem">
+  <a href="https://github.com/wan0net/trust0">GitHub</a> · AGPL-3.0 (app) / Apache-2.0 (libraries)
+</div>
+</main>
+</div>
+</body>
+</html>
