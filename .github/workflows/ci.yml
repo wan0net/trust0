@@ -30,6 +30,7 @@ jobs:
 
   interop:
     name: Keyoxide Interop
+    continue-on-error: true  # Codeberg Docker registry can be flaky
     runs-on: ubuntu-latest
     services:
       aspe-server:
