@@ -1,13 +1,20 @@
-name: CI
+name: trust0 CI
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   test:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +29,7 @@ jobs:
       - run: pnpm --filter @trust0/identity test
 
   interop:
+    name: Keyoxide Interop
     runs-on: ubuntu-latest
     services:
       aspe-server:
@@ -52,44 +60,117 @@ jobs:
           ASPE_TEST_URL: http://localhost:3000
 
   semgrep:
+    name: Semgrep SAST
     runs-on: ubuntu-latest
     container:
       image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
-      - run: semgrep scan --config auto --config p/javascript --config p/typescript --config p/owasp-top-ten --error --json > semgrep-results.json || true
-      - run: semgrep scan --config auto --config p/javascript --config p/typescript --config p/owasp-top-ten --error
-      - uses: actions/upload-artifact@v4
+
+      - name: Run Semgrep (text output for log visibility)
+        run: |
+          echo "::group::Semgrep scan results"
+          semgrep scan \
+            --config auto \
+            --config p/javascript \
+            --config p/typescript \
+            --config p/owasp-top-ten \
+            --config p/security-audit \
+            --error \
+            --severity ERROR \
+            --severity WARNING \
+            packages/ apps/ bots/ 2>&1 || SCAN_EXIT=$?
+          echo "::endgroup::"
+          echo "Semgrep exit code: ${SCAN_EXIT:-0}"
+
+      - name: Run Semgrep (SARIF for GitHub Security tab)
+        if: always()
+        run: |
+          semgrep scan \
+            --config auto \
+            --config p/javascript \
+            --config p/typescript \
+            --config p/owasp-top-ten \
+            --config p/security-audit \
+            --sarif --output semgrep-results.sarif \
+            packages/ apps/ bots/ || true
+
+      - name: Check for ERROR/WARNING findings
+        if: always()
+        run: |
+          if [ -f semgrep-results.sarif ]; then
+            ERRORS=$(python3 -c "
+          import json
+          d = json.load(open('semgrep-results.sarif'))
+          results = d.get('runs', [{}])[0].get('results', [])
+          errors = [r for r in results if r.get('level') in ('error', 'warning')]
+          for e in errors:
+              loc = e.get('locations', [{}])[0].get('physicalLocation', {})
+              uri = loc.get('artifactLocation', {}).get('uri', '?')
+              line = loc.get('region', {}).get('startLine', '?')
+              msg = e.get('message', {}).get('text', '?')[:120]
+              print(f'::error file={uri},line={line}::{msg}')
+          print(len(errors))
+          " 2>/dev/null | tail -1)
+            echo "Semgrep ERROR/WARNING findings: $ERRORS"
+            if [ "$ERRORS" -gt 0 ] 2>/dev/null; then
+              echo "::error::Semgrep found $ERRORS error/warning-level issues"
+              exit 1
+            fi
+          fi
+
+      - name: Upload SARIF to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep-results.sarif
+        continue-on-error: true
+
+      - name: Upload Semgrep artifact
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: semgrep-results
-          path: semgrep-results.json
+          path: semgrep-results.sarif
 
   trivy:
+    name: Trivy Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           scan-ref: .
           format: table
-          exit-code: 0
           severity: CRITICAL,HIGH
+          exit-code: 0
           scanners: vuln,secret,misconfig
           trivyignores: .trivyignore
-      - name: Run Trivy SARIF output
-        uses: aquasecurity/trivy-action@master
+
+      - name: Run Trivy (SARIF for GitHub Security tab)
         if: always()
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           scan-ref: .
           format: sarif
           output: trivy-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
           scanners: vuln,secret,misconfig
           trivyignores: .trivyignore
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload SARIF to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+        continue-on-error: true
+
+      - name: Upload Trivy artifact
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: trivy-results
