@@ -20,6 +20,7 @@ export interface User {
 	id: string;
 	name: string;
 	email: string;
+	emailVerified: boolean;
 	image: string | null;
 	createdAt: string;
 	updatedAt: string;
@@ -29,13 +30,40 @@ export interface MeResponse {
 	user: User;
 }
 
+// Alias for backward compat — pages import this type
+export type { User as MeUser };
+
 // ── Auth ───────────────────────────────────────────────────────────────────
 
 export async function getMe(): Promise<MeResponse | null> {
 	try {
-		return await request<MeResponse>("/api/me");
+		const data = await request<MeResponse>("/api/me");
+		if (!data.user) return null;
+		return data;
 	} catch {
 		return null;
+	}
+}
+
+export async function signInWithGitHub(): Promise<void> {
+	const callbackURL = typeof window !== "undefined"
+		? `${window.location.origin}/identity`
+		: "";
+
+	const res = await fetch(`${API_BASE}/api/auth/sign-in/social`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify({ provider: "github", callbackURL }),
+	});
+
+	if (!res.ok) {
+		throw new Error(`Sign-in failed: ${res.status}`);
+	}
+
+	const data = await res.json() as { url?: string; redirect?: boolean };
+	if (data.url) {
+		window.location.href = data.url;
 	}
 }
 
@@ -50,4 +78,5 @@ export async function signOut(): Promise<void> {
 	} catch {
 		// Clear local state regardless
 	}
+	window.location.href = "/";
 }

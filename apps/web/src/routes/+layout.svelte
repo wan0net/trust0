@@ -1,15 +1,31 @@
 <script lang="ts">
 	import "../app.css";
 	import { onMount } from "svelte";
-	import { getMe } from "$lib/api";
+	import { getMe, signInWithGitHub, signOut, type MeResponse } from "$lib/api";
 
 	let { children } = $props();
-	let user = $state<{ name: string; email: string; image: string | null } | null>(null);
+	let me = $state<MeResponse | null>(null);
+	let showMenu = $state(false);
+	let signingIn = $state(false);
 
 	onMount(async () => {
-		const me = await getMe();
-		user = me;
+		me = await getMe();
 	});
+
+	async function handleSignIn() {
+		signingIn = true;
+		try {
+			await signInWithGitHub();
+		} catch {
+			signingIn = false;
+		}
+	}
+
+	async function handleSignOut() {
+		showMenu = false;
+		await signOut();
+		me = null;
+	}
 </script>
 
 <nav class="topbar">
@@ -18,12 +34,35 @@
 			<span class="logo-text">trust<span class="logo-zero">0</span></span>
 		</a>
 		<div class="nav-links">
-			{#if user}
-				<a href="/identity">Identity</a>
+			{#if me}
+				<a href="/identity">My Identity</a>
 				<a href="/identity/sign">Sign</a>
-				<span class="user-name">{user.name}</span>
+				<div class="user-menu">
+					<button class="user-btn" onclick={() => { showMenu = !showMenu; }}>
+						{#if me.user.image}
+							<img src={me.user.image} alt="" class="user-avatar" />
+						{/if}
+						<span class="user-name">{me.user.name}</span>
+						<span class="chevron">▾</span>
+					</button>
+					{#if showMenu}
+						<div class="dropdown">
+							<div class="dropdown-header">
+								<div class="dropdown-name">{me.user.name}</div>
+								<div class="dropdown-email">{me.user.email}</div>
+							</div>
+							<hr class="dropdown-sep" />
+							<a href="/identity" class="dropdown-item" onclick={() => { showMenu = false; }}>Identity Dashboard</a>
+							<a href="/identity/sign" class="dropdown-item" onclick={() => { showMenu = false; }}>Sign Document</a>
+							<hr class="dropdown-sep" />
+							<button class="dropdown-item danger" onclick={handleSignOut}>Sign Out</button>
+						</div>
+					{/if}
+				</div>
 			{:else}
-				<a href="/api/auth/sign-in/social?provider=github" class="btn-login">Sign in with GitHub</a>
+				<button class="btn-login" onclick={handleSignIn} disabled={signingIn}>
+					{signingIn ? "Redirecting..." : "Sign in with GitHub"}
+				</button>
 			{/if}
 		</div>
 	</div>
@@ -35,13 +74,15 @@
 
 <footer class="site-footer">
 	<div class="container">
-		<p>trust0 — Trust no one. Verify everything.</p>
+		<p>trust0 — open source cryptographic identity</p>
 		<p class="footer-links">
 			<a href="https://github.com/wan0net/trust0">Source</a>
 			<span class="sep">·</span>
 			<a href="https://ariadne.id">Ariadne Spec</a>
 			<span class="sep">·</span>
-			Open source (AGPL-3.0)
+			<a href="https://wan0.net/trust0/docs/">Docs</a>
+			<span class="sep">·</span>
+			AGPL-3.0
 		</p>
 	</div>
 </footer>
@@ -82,19 +123,95 @@
 		font-size: 0.875rem;
 	}
 
-	.nav-links a { color: var(--text-dim); }
-	.nav-links a:hover { color: var(--text); text-decoration: none; }
-	.user-name { color: var(--text-dim); font-size: 0.8rem; }
+	.nav-links a { color: var(--text-dim); text-decoration: none; }
+	.nav-links a:hover { color: var(--text); }
 
 	.btn-login {
-		padding: 6px 14px;
+		padding: 8px 16px;
 		border: 1px solid var(--border);
 		border-radius: 6px;
-		color: var(--text) !important;
+		background: transparent;
+		color: var(--text);
 		font-weight: 500;
+		font-size: 0.875rem;
+		cursor: pointer;
+		font-family: var(--font-sans);
 	}
 
-	.btn-login:hover { background: var(--bg-subtle); text-decoration: none !important; }
+	.btn-login:hover { background: var(--bg-subtle); }
+	.btn-login:disabled { opacity: 0.6; cursor: wait; }
+
+	/* ── User menu ──────────────────────────────── */
+
+	.user-menu { position: relative; }
+
+	.user-btn {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 4px 8px;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: transparent;
+		color: var(--text);
+		cursor: pointer;
+		font-size: 0.8rem;
+		font-family: var(--font-sans);
+	}
+
+	.user-btn:hover { background: var(--bg-subtle); }
+
+	.user-avatar {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+
+	.user-name { color: var(--text-dim); }
+	.chevron { font-size: 0.7rem; color: var(--text-dim); }
+
+	.dropdown {
+		position: absolute;
+		top: calc(100% + 8px);
+		right: 0;
+		min-width: 220px;
+		background: var(--bg-subtle);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		padding: 8px 0;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+	}
+
+	.dropdown-header { padding: 8px 16px; }
+	.dropdown-name { font-weight: 600; font-size: 0.85rem; }
+	.dropdown-email { font-size: 0.75rem; color: var(--text-dim); }
+
+	.dropdown-sep {
+		border: none;
+		border-top: 1px solid var(--border);
+		margin: 4px 0;
+	}
+
+	.dropdown-item {
+		display: block;
+		width: 100%;
+		padding: 8px 16px;
+		font-size: 0.8rem;
+		color: var(--text-dim);
+		text-decoration: none;
+		background: none;
+		border: none;
+		cursor: pointer;
+		text-align: left;
+		font-family: var(--font-sans);
+	}
+
+	.dropdown-item:hover { background: var(--bg-hover, #1a1a1a); color: var(--text); }
+	.dropdown-item.danger { color: var(--red); }
+	.dropdown-item.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
+	/* ── Main + Footer ──────────────────────────── */
 
 	main {
 		padding-top: 32px;
@@ -111,5 +228,6 @@
 	}
 
 	.footer-links { margin-top: 4px; }
+	.footer-links a { color: var(--text-dim); }
 	.sep { margin: 0 4px; opacity: 0.3; }
 </style>
