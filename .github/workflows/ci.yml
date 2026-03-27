@@ -21,6 +21,36 @@ jobs:
       - run: pnpm install
       - run: pnpm --filter @trust0/identity test
 
+  interop:
+    runs-on: ubuntu-latest
+    services:
+      aspe-server:
+        image: codeberg.org/keyoxide/aspe-server:latest
+        env:
+          ASPE_DOMAIN: localhost:3000
+        ports:
+          - 3000:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - name: Wait for ASPE server
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:3000/.well-known/aspe/version && break
+            sleep 1
+          done
+      - name: Run interop tests against Keyoxide ASPE server
+        run: pnpm --filter @trust0/identity test
+        env:
+          ASPE_TEST_URL: http://localhost:3000
+
   semgrep:
     runs-on: ubuntu-latest
     container:
@@ -49,8 +79,6 @@ jobs:
           severity: CRITICAL,HIGH
           scanners: vuln,secret,misconfig
           trivyignores: .trivyignore
-          # exit-code 0: informational until doipjs dependency CVEs are remediated
-          # Known issues tracked in .trivyignore
       - name: Run Trivy SARIF output
         uses: aquasecurity/trivy-action@master
         if: always()
