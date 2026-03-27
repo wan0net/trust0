@@ -66,6 +66,9 @@ importers:
       '@trust0/verify':
         specifier: workspace:*
         version: link:../../packages/verify
+      jose:
+        specifier: ^6.0.0
+        version: 6.2.2
       qrcode-svg:
         specifier: ^1.1.0
         version: 1.1.0

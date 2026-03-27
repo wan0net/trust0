@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@trust0/identity": "workspace:*",
 		"@trust0/verify": "workspace:*",
+		"jose": "^6.0.0",
 		"@sveltejs/adapter-cloudflare": "^7.0.0",
 		"@sveltejs/kit": "^2.19.0",
 		"qrcode-svg": "^1.1.0",
