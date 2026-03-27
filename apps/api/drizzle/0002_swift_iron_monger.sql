@@ -1,1 +1,0 @@
-ALTER TABLE `organization` ADD `exempt` integer DEFAULT false NOT NULL;

@@ -2,79 +2,99 @@
 
 ## What This Is
 
-Keybase replacement. Cryptographic identity verification — prove you own your accounts
-(GitHub, DNS, Mastodon, Twitter, wallets, etc.) using Ed25519 signatures and an
-append-only sigchain. All verification happens in the viewer's browser. No server trust.
+Keybase replacement. Open source cryptographic identity verification — prove you own
+your accounts (GitHub, DNS, Mastodon, Twitter, wallets, etc.) using Ed25519 signatures
+and an append-only sigchain. All verification happens in the viewer's browser.
 
 **Brand:** trust0 (trust-zero). "Trust no one. Verify everything."
+
+**License:** AGPL-3.0 (app), Apache-2.0 (libraries + bots), CC-BY-SA (spec extensions)
 
 ## Core Principle
 
 **If trust0.app disappears tomorrow, nobody loses their identity.**
 
-Profiles are self-verifying signed files. They work anywhere. The web app is a tool
-for creating and viewing them — not a dependency.
+The server stores signed files and serves them. The data is portable. The code is
+open source. Anyone can fork, deploy, and restore from backup in 10 minutes.
 
 ## Architecture
 
-- **Static SvelteKit site** on Cloudflare Pages — no backend, no Workers for the main app
-- **@trust0/identity** package — pure TypeScript crypto library (jose, doipjs, rfc4648, @scure/bip39)
-- **CORS proxy** — single Cloudflare Worker, only compute needed (for doipjs browser verification)
-- **Storage is pluggable** — user chooses: GitHub Pages, own domain, or trust0.app hosted
-- **Git repo as identity server** — .well-known/aspe/ files committed via GitHub API from browser
-- **doipjs** for client-side verification — 30+ providers, battle-tested
+- **Hono API Worker** + D1 database — stores profiles, chains, attestations
+- **SvelteKit frontend** on Cloudflare Pages — dashboard + public profile viewer
+- **@trust0/identity** — pure TypeScript crypto library (Apache-2.0)
+- **@trust0/verify** — forked from doipjs, audited verification engine (Apache-2.0)
+- **CORS proxy Worker** — for doipjs browser verification
+- **Discord + Telegram bots** — server-attested proofs (Apache-2.0)
+- **Better Auth** — GitHub OAuth for dashboard login (minimal, no orgs/billing)
+- **All data is signed JWS** — self-verifying, portable, works without the server
+
+## Relationship to Ariadne / Keyoxide / doipjs
+
+We adopt the Ariadne spec and fork doipjs. Neither has been security audited.
+trust0 is the actively maintained, production-grade implementation.
+
+- **Ariadne spec** — adopted (ASP profiles, ASPE protocol)
+- **doipjs** — forked as @trust0/verify (audit critical paths before launch)
+- **Keyoxide** — compatible (can verify each other's profiles)
+- **Sigchain, key rotation, doc signing** — our extensions (Keyoxide doesn't have these)
 
 ## Project Structure
 
 ```
 trust0/
 ├── apps/
-│   ├── web/              # SvelteKit static site (trust0.app)
-│   └── proxy/            # CORS proxy Worker (only compute)
+│   ├── api/              # Hono API Worker (ASPE, sigchain, attestations, export/import)
+│   ├── web/              # SvelteKit frontend (trust0.app)
+│   └── proxy/            # CORS proxy Worker (for doipjs)
 ├── packages/
-│   └── identity/         # Core crypto library (@trust0/identity)
+│   ├── identity/         # Core crypto library (@trust0/identity)
+│   └── verify/           # doipjs fork (@trust0/verify) — TODO
 ├── bots/
-│   ├── discord/          # Discord attestation bot (Worker)
-│   └── telegram/         # Telegram attestation bot (Worker)
-├── PLAN.md               # → ../PLAN.md (full architecture doc)
-└── CLAUDE.md             # This file
+│   ├── discord/          # Discord attestation bot
+│   └── telegram/         # Telegram attestation bot
+├── CLAUDE.md             # This file
+└── PLAN.md → ../PLAN.md  # Full architecture doc
 ```
 
 ## Commands
 
 ```bash
 pnpm install
-pnpm test                          # Run all tests
-pnpm --filter @trust0/identity test  # Identity package tests only
+pnpm test                              # Run all tests
+pnpm --filter @trust0/identity test    # Identity package tests only
+pnpm --filter @trust0/api dev          # API dev server
+pnpm --filter @trust0/web dev          # Web dev server
+pnpm --filter @trust0/proxy dev        # Proxy dev server
 ```
 
 ## Extraction Status
 
-Extracting from link42/login2 (feat/keybase branch). The identity package and proxy
-are copied. The web app needs rebuilding as a static site with GitHub storage backend
-instead of Hono API + D1.
+Extracted from link42/login2 (feat/keybase branch, 38 commits, 71 tests).
 
 ### Done
-- @trust0/identity package (keys, profiles, sigchain, signing, SSH, mnemonic)
-- CORS proxy worker
-- 71 tests passing
+- @trust0/identity (keys, profiles, sigchain, signing, SSH, mnemonic) — 71 tests
+- API Worker (ASPE, sigchain, attestations, export/import)
+- CORS proxy Worker
+- Discord + Telegram bots
+- D1 schema (7 tables, clean migration)
+- Configurable ASPE_DOMAIN
+
+### In Progress
+- SvelteKit web app (extracting proof pages + dashboard from link42)
 
 ### Remaining
-- [ ] Static SvelteKit web app with GitHub OAuth
-- [ ] GitHub API storage backend (commit profile + chain files to user's repo)
-- [ ] Strip Better Auth — crypto key IS the identity
-- [ ] Configurable ASPE domain
-- [ ] Copy and adapt Discord/Telegram bots
-- [ ] Username directory (static JSON index)
-- [ ] trust0.app hosted profiles for users without own hosting
+- [ ] Fork doipjs → @trust0/verify (audit critical paths)
+- [ ] Deploy guide in README
+- [ ] Profile export UI (download zip)
+- [ ] Onboarding flow for non-technical users
 
 ## Code Style
 
 - TypeScript strict
-- Tabs for indentation (matches link42 convention in login2)
+- Tabs for indentation
 - Double quotes
 - `jose` for all JWS/JWK operations
-- `doipjs` for all proof verification — do NOT hand-roll platform-specific fetching
+- `@trust0/verify` (doipjs fork) for all proof verification
 - CSS custom properties for theming (no Tailwind, no UI framework)
 - Section markers: `// ── Section Name ──────────`
 
@@ -83,11 +103,13 @@ instead of Hono API + D1.
 ### Always
 - Run tests before marking work done
 - All verification must be client-side (browser, not server)
-- Profiles must be portable — never depend on a specific server being available
-- Use doipjs for verification, jose for signing — don't reinvent
+- Profiles must be portable — never depend on a specific server
+- Use @trust0/verify for verification, jose for signing — don't reinvent
+- Every D1 row must be a self-verifying JWS — portable by design
 
 ### Never
 - Add a server dependency for core identity operations
 - Store private keys as exportable JSON (use IndexedDB CryptoKey objects)
-- Make trust0.app a required component — it must be optional
-- Hardcode the ASPE domain — it must be configurable per deployment
+- Make trust0.app a required component — it must be optional/replaceable
+- Hardcode the ASPE domain — configurable via ASPE_DOMAIN env var
+- Close-source any component
