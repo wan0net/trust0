@@ -12,7 +12,9 @@ import {
 
 const aspe = new Hono<AuthEnv>();
 
-// CORS for .well-known ASPE routes (not covered by /api/* CORS in index.ts)
+// SPEC EXTENSION (APC-005): Ariadne spec does not mention CORS.
+// Browser-based ASPE clients need CORS headers for cross-origin fetch.
+// See: dev/spec/proposed-changes.md#apc-005
 aspe.use("/.well-known/*", async (c, next) => {
 	const origins = c.env.ALLOWED_ORIGINS
 		? c.env.ALLOWED_ORIGINS.split(",").map((o: string) => o.trim())
@@ -45,8 +47,11 @@ aspe.get("/.well-known/aspe/id/:fingerprint", async (c) => {
 		return c.json({ error: "Profile not found" }, 404);
 	}
 
+	// SPEC DEVIATION (APC-004): Spec says "application/asp+jwt; charset=UTF-8"
+	// We use "application/asp+jwt" without charset (JWS is ASCII-only).
+	// See: dev/spec/proposed-changes.md#apc-004
 	return c.text(profile.profileJws, 200, {
-		"Content-Type": "application/asp",
+		"Content-Type": "application/asp+jwt",
 	});
 });
 
@@ -355,6 +360,9 @@ aspe.get("/api/identity/my-profile", requireAuth, async (c) => {
 });
 
 // ── Email Attestation ────────────────────────────────────────────────────────
+// SPEC EXTENSION (APC-008): Ariadne spec has no email verification mechanism.
+// We implement challenge-response: server emails a challenge, client signs it.
+// See: dev/spec/proposed-changes.md#apc-008
 
 // Step 1: Generate challenge and send to user's verified email
 aspe.post("/api/identity/email/challenge", requireAuth, async (c) => {
@@ -560,6 +568,10 @@ aspe.get("/api/identity/verify-email/:fingerprint", async (c) => {
 });
 
 // ── General Attestation Endpoints ─────────────────────────────────────────────
+// SPEC EXTENSION (APC-009): Ariadne spec only covers publicly-verifiable proofs.
+// These endpoints handle server-attested proofs (Discord bots, Telegram bots, etc.)
+// where a trusted intermediary witnesses the proof and signs an attestation.
+// See: dev/spec/proposed-changes.md#apc-009
 
 aspe.get("/api/identity/attestations/:fingerprint", async (c) => {
 	const fingerprint = c.req.param("fingerprint");

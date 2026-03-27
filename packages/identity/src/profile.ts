@@ -112,6 +112,9 @@ export async function parseProfile(jws: string): Promise<ParsedProfile> {
     throw new Error("Unsupported profile payload version");
   }
 
+  // TODO (APC-003): Check exp claim if present and reject expired profiles.
+  // See: dev/spec/proposed-changes.md#apc-003
+
   const name = decodedPayload["http://ariadne.id/name"];
   const claims = decodedPayload["http://ariadne.id/claims"];
   const description = decodedPayload["http://ariadne.id/description"];
@@ -235,7 +238,9 @@ export async function parseRequest(jws: string): Promise<ParsedRequest> {
     throw new Error("Missing or invalid iat");
   }
 
-  // Replay protection: iat must be within 5 minutes
+  // SPEC DEVIATION (APC-001): Ariadne ASP spec says 60 seconds.
+  // We use 300s (5 min) for clock skew and mobile/high-latency clients.
+  // See: dev/spec/proposed-changes.md#apc-001
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(now - iat) > 300) {
     throw new Error("Request expired or clock skew too large");
