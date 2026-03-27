@@ -1,92 +1,115 @@
 <script lang="ts">
+	import "../app.css";
 	import { onMount } from "svelte";
-	import { goto } from "$app/navigation";
-	import { page } from "$app/state";
-	import { getMe, devLogout, checkDevMode, signOut } from "$lib/api";
-	import { Toast, PlatformBar, Header, Footer } from "@link42/ui";
-	import "@link42/tokens";
-	import "../brand.css";
-	import "@link42/ui/patterns.css";
+	import { getMe } from "$lib/api";
 
-	let { data, children } = $props();
-	let meUser = $state<{ name: string; email: string; image: string | null } | null>(null);
-	let devMode = $state(false);
-	let theme = $state<"light" | "dark">(data.theme as "light" | "dark");
+	let { children } = $props();
+	let user = $state<{ name: string; email: string; image: string | null } | null>(null);
+
 	onMount(async () => {
-		const [me, isDev] = await Promise.all([getMe(), checkDevMode()]);
-		devMode = isDev;
-		if (me) {
-			meUser = { name: me.user.name, email: me.user.email, image: me.user.image };
-		}
+		const me = await getMe();
+		user = me;
 	});
-
-	function setThemeCookie(t: string) {
-		document.cookie = `theme=${t};path=/;domain=.link42.app;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
-	}
-
-	function toggleTheme() {
-		const next = theme === "light" ? "dark" : "light";
-		document.documentElement.setAttribute("data-theme", next);
-		setThemeCookie(next);
-		theme = next;
-	}
-
-	async function handleSignOut() {
-		if (devMode) {
-			await devLogout();
-		}
-		await signOut();
-		meUser = null;
-		goto("/");
-	}
 </script>
 
-<div class="cl-page">
-	<PlatformBar
-		currentApp="login2"
-		user={meUser}
-		signInHref="/"
-		accountHref="/"
-		onSignOut={handleSignOut}
-	/>
-	<Header
-		appName="login2"
-		navItems={[
-			{ href: "/admin", label: "Dashboard" },
-			{ href: "/admin/users", label: "Users" },
-			{ href: "/admin/organizations", label: "Orgs" },
-			{ href: "/admin/subscriptions", label: "Billing" },
-			{ href: "/admin/apps", label: "Apps" },
-			{ href: "/identity", label: "Identity" },
-		]}
-		activePath={page.url.pathname}
-		theme={theme}
-		onToggleTheme={toggleTheme}
-	/>
+<nav class="topbar">
+	<div class="topbar-inner">
+		<a href="/" class="logo">
+			<span class="logo-text">trust<span class="logo-zero">0</span></span>
+		</a>
+		<div class="nav-links">
+			{#if user}
+				<a href="/identity">Identity</a>
+				<a href="/identity/sign">Sign</a>
+				<span class="user-name">{user.name}</span>
+			{:else}
+				<a href="/api/auth/sign-in/social?provider=github" class="btn-login">Sign in with GitHub</a>
+			{/if}
+		</div>
+	</div>
+</nav>
 
-	<main class="container" style="flex: 1; padding-top: 28px; padding-bottom: 28px;">
-		{@render children()}
-	</main>
+<main class="container">
+	{@render children()}
+</main>
 
-	<Footer appName="login2" attribution="Centralized Identity Platform" />
-	{#if devMode}
-		<span class="dev-badge">DEV</span>
-	{/if}
-
-	<Toast />
-</div>
+<footer class="site-footer">
+	<div class="container">
+		<p>trust0 — Trust no one. Verify everything.</p>
+		<p class="footer-links">
+			<a href="https://github.com/wan0net/trust0">Source</a>
+			<span class="sep">·</span>
+			<a href="https://ariadne.id">Ariadne Spec</a>
+			<span class="sep">·</span>
+			Open source (AGPL-3.0)
+		</p>
+	</div>
+</footer>
 
 <style>
-	.dev-badge {
-		position: fixed;
-		bottom: 8px;
-		right: 8px;
-		background: var(--amber);
-		color: white;
-		font-size: 10px;
-		font-weight: 700;
-		padding: 2px 8px;
-		border-radius: 4px;
-		z-index: 999;
+	.topbar {
+		border-bottom: 1px solid var(--border);
+		padding: 12px 24px;
+		position: sticky;
+		top: 0;
+		background: var(--bg);
+		z-index: 100;
 	}
+
+	.topbar-inner {
+		max-width: 960px;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.logo { text-decoration: none; color: var(--text); }
+
+	.logo-text {
+		font-size: 1.25rem;
+		font-weight: 700;
+		letter-spacing: -0.03em;
+		font-family: var(--font-mono);
+	}
+
+	.logo-zero { color: var(--accent); }
+
+	.nav-links {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		font-size: 0.875rem;
+	}
+
+	.nav-links a { color: var(--text-dim); }
+	.nav-links a:hover { color: var(--text); text-decoration: none; }
+	.user-name { color: var(--text-dim); font-size: 0.8rem; }
+
+	.btn-login {
+		padding: 6px 14px;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		color: var(--text) !important;
+		font-weight: 500;
+	}
+
+	.btn-login:hover { background: var(--bg-subtle); text-decoration: none !important; }
+
+	main {
+		padding-top: 32px;
+		padding-bottom: 64px;
+		min-height: calc(100vh - 180px);
+	}
+
+	.site-footer {
+		border-top: 1px solid var(--border);
+		padding: 24px;
+		text-align: center;
+		font-size: 0.8rem;
+		color: var(--text-dim);
+	}
+
+	.footer-links { margin-top: 4px; }
+	.sep { margin: 0 4px; opacity: 0.3; }
 </style>

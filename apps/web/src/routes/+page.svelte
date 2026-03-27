@@ -1,124 +1,148 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { goto } from "$app/navigation";
-	import { getMe, signInWithProvider, checkDevMode, devLogin } from "$lib/api";
+	import { getMe } from "$lib/api";
 
-	let user = $state<{ name: string; email: string; image: string | null } | null>(null);
-	let loading = $state(true);
-	let devMode = $state(false);
-	let devLoggingIn = $state(false);
-	let signingIn = $state<string | null>(null);
-	let theme = $state("light");
-
-	async function handleSignIn(provider: string) {
-		signingIn = provider;
-		try {
-			await signInWithProvider(provider);
-		} catch {
-			signingIn = null;
-		}
-	}
+	let user = $state<{ name: string } | null>(null);
 
 	onMount(async () => {
-		theme = document.documentElement.getAttribute("data-theme") || "light";
-		const [me, isDev] = await Promise.all([getMe(), checkDevMode()]);
-		devMode = isDev;
-		if (me) {
-			user = me.user;
-		}
-		loading = false;
+		user = await getMe();
 	});
-
-	async function handleDevLogin() {
-		devLoggingIn = true;
-		const result = await devLogin();
-		if (result) {
-			goto("/admin");
-		}
-		devLoggingIn = false;
-	}
 </script>
 
-<div class="login-page">
-	<div class="landing-logo">
-		<img src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'} alt="trust0" />
+<div class="hero">
+	<h1>trust<span class="zero">0</span></h1>
+	<p class="tagline">Trust no one. Verify everything.</p>
+	<p class="subtitle">
+		Cryptographic identity verification. Prove you own your accounts across
+		platforms using Ed25519 signatures and an append-only sigchain.
+		All verification happens in your browser. Open source. Open data.
+	</p>
+
+	{#if user}
+		<a href="/identity" role="button" class="cta">Go to Identity Dashboard</a>
+	{:else}
+		<a href="/api/auth/sign-in/social?provider=github" role="button" class="cta">Sign in with GitHub</a>
+	{/if}
+</div>
+
+<div class="features">
+	<div class="feature">
+		<h3>Client-Side Verification</h3>
+		<p>Your browser fetches proofs directly from platforms and verifies signatures.
+		   The server stores bytes — it can't forge results.</p>
 	</div>
-	<div class="login-card">
-		{#if loading}
-			<p aria-busy="true">Checking authentication...</p>
-		{:else if user}
-			<h2>Welcome back, {user.name}</h2>
-			<p class="subtitle">{user.email}</p>
-			<a href="/admin" role="button">Go to Dashboard</a>
-		{:else}
-			<h2>Sign in</h2>
-			<p class="subtitle">Choose a provider to access the admin console.</p>
 
-			{#if devMode}
-				<button onclick={handleDevLogin} aria-busy={devLoggingIn} disabled={devLoggingIn}>
-					Dev Login (no OAuth required)
-				</button>
-				<hr />
-				<small>Dev mode is active. OAuth providers below require real credentials.</small>
-				<div style="margin-top: 12px;"></div>
-			{/if}
+	<div class="feature">
+		<h3>Append-Only Sigchain</h3>
+		<p>Every identity action is a signed, hash-linked chain entry.
+		   Key rotation, proof revocation, and identity history — all auditable.</p>
+	</div>
 
-			<form class="provider-grid" onsubmit={(e) => e.preventDefault()}>
-				<button type="button" onclick={() => handleSignIn("google")} class="outline" aria-busy={signingIn === "google"} disabled={!!signingIn}>Google</button>
-				<button type="button" onclick={() => handleSignIn("github")} class="secondary" aria-busy={signingIn === "github"} disabled={!!signingIn}>GitHub</button>
-				<button type="button" onclick={() => handleSignIn("discord")} class="secondary" aria-busy={signingIn === "discord"} disabled={!!signingIn}>Discord</button>
-			</form>
-		{/if}
+	<div class="feature">
+		<h3>20+ Proof Providers</h3>
+		<p>GitHub, GitLab, Mastodon, Bluesky, Twitter/X, Reddit, DNS, Ethereum,
+		   Bitcoin, Solana, Nostr, and more. Client-verified or server-attested.</p>
+	</div>
+
+	<div class="feature">
+		<h3>Document Signing</h3>
+		<p>Sign files with your identity key. Rekor transparency log timestamps.
+		   Multi-party signatures. SSH key export for git commits.</p>
+	</div>
+
+	<div class="feature">
+		<h3>Portable Identity</h3>
+		<p>Export your entire identity as a zip. Self-host on GitHub Pages, your
+		   own domain, or anywhere. Your data works without this server.</p>
+	</div>
+
+	<div class="feature">
+		<h3>Resilient by Design</h3>
+		<p>If trust0.app disappears, your identity survives. Every piece of data
+		   is a self-verifying signed file. Open source, forkable, redeployable.</p>
 	</div>
 </div>
 
+<div class="ariadne-compat">
+	<p>Built on the <a href="https://ariadne.id">Ariadne specification</a>.
+	   Compatible with <a href="https://keyoxide.org">Keyoxide</a>.
+	   Verification powered by <a href="https://codeberg.org/keyoxide/doipjs">doipjs</a> (forked as @trust0/verify).</p>
+</div>
+
 <style>
-	.login-page {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		min-height: 60vh;
+	.hero {
+		text-align: center;
+		padding: 64px 0 48px;
 	}
 
-	.landing-logo {
-		width: 120px;
-		height: 120px;
+	.hero h1 {
+		font-family: var(--font-mono);
+		font-size: 4rem;
+		font-weight: 700;
+		letter-spacing: -0.05em;
+		margin-bottom: 8px;
+	}
+
+	.zero { color: var(--accent); }
+
+	.tagline {
+		font-size: 1.25rem;
+		color: var(--text-dim);
+		font-weight: 500;
 		margin-bottom: 16px;
 	}
 
-	.landing-logo img {
-		width: 100%;
-		height: 100%;
+	.subtitle {
+		max-width: 600px;
+		margin: 0 auto 32px;
+		color: var(--text-dim);
+		font-size: 0.95rem;
+		line-height: 1.7;
 	}
 
-	.login-card {
-		width: 100%;
-		max-width: 400px;
-		padding: 32px;
+	.cta {
+		background: var(--accent);
+		color: #000;
+		padding: 12px 32px;
+		border-radius: 8px;
+		font-weight: 600;
+		font-size: 1rem;
+		border: none;
+	}
+
+	.cta:hover { opacity: 0.85; text-decoration: none; }
+
+	.features {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 24px;
+		padding: 48px 0;
+	}
+
+	.feature {
+		padding: 24px;
 		border: 1px solid var(--border);
 		border-radius: 12px;
-		background: var(--bg-card);
+		background: var(--bg-subtle);
 	}
 
-	.login-card h2 {
-		margin-top: 0;
-		margin-bottom: 4px;
+	.feature h3 {
+		font-size: 1rem;
+		font-weight: 600;
+		margin-bottom: 8px;
+		color: var(--accent);
 	}
 
-	.subtitle {
+	.feature p {
+		font-size: 0.875rem;
 		color: var(--text-dim);
-		font-size: 13px;
-		margin-bottom: 20px;
+		line-height: 1.6;
 	}
 
-	.provider-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-
-	.provider-grid button {
-		width: 100%;
+	.ariadne-compat {
+		text-align: center;
+		padding: 32px 0 48px;
+		font-size: 0.85rem;
+		color: var(--text-dim);
 	}
 </style>
