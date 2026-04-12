@@ -200,8 +200,16 @@
 		attestingEmail = true;
 		error = null;
 		try {
-			// Step 1: Request challenge (server sends email)
-			const { challenge, email } = await requestEmailChallenge();
+			// Step 1: Request challenge (server sends email only)
+			const { email } = await requestEmailChallenge();
+
+			const challenge = window.prompt(
+				`Check ${email} for your verification challenge, then paste it here to continue.`,
+			)?.trim();
+
+			if (!challenge) {
+				throw new Error("Email verification cancelled");
+			}
 
 			// Step 2: Sign challenge with identity key and submit
 			const { email: verifiedEmail } = await verifyEmailChallenge(identity, challenge);
@@ -765,12 +773,12 @@
 						<button class="outline btn-sm" onclick={handleExportSshKey}>Export SSH Key</button>
 						{#if showSshKey}
 							<div class="ssh-export" style="margin-top: 12px;">
-								<label>SSH Public Key</label>
+								<div style="font-weight: 600; margin-bottom: 4px;">SSH Public Key</div>
 								<div class="proof-box">
 									<code style="font-size: 0.7rem; word-break: break-all;">{sshPublicKey}</code>
 									<button class="btn-sm secondary" onclick={() => navigator.clipboard.writeText(sshPublicKey)}>Copy</button>
 								</div>
-								<label style="margin-top: 8px;">Git Config</label>
+								<div style="font-weight: 600; margin: 8px 0 4px;">Git Config</div>
 								<pre style="font-size: 0.75rem; padding: 12px; background: var(--bg-subtle); border-radius: 8px; overflow-x: auto;">git config --global gpg.format ssh
 git config --global user.signingkey ~/.ssh/identity_ed25519.pub
 git config --global commit.gpgsign true</pre>
@@ -855,9 +863,8 @@ git config --global commit.gpgsign true</pre>
 			{/if}
 		</div>
 	{/if}
-{/if}
 
-<style>
+	<style>
 	/* ── Onboarding ─────────────────────────────── */
 
 	.onboarding {

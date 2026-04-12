@@ -5,12 +5,27 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import * as schema from "./db/schema";
 import {
+	loadVerifiedChainState,
+} from "./identity-state";
+import {
 	type AuthEnv,
 	requireAuth,
 	sessionMiddleware,
 } from "./middleware/session";
+import {
+	assertProfileMatchesChainState,
+	classifyProfileUpdate,
+} from "./policy";
 
 const aspe = new Hono<AuthEnv>();
+
+const aspeUriFor = (domain: string | undefined, fingerprint: string): string =>
+	`aspe:${domain || "trust0.app"}:${fingerprint}`;
+
+const parseAspeUriFingerprint = (aspeUri: string): string | null => {
+	const match = aspeUri.match(/^aspe:[^:]+:([A-Z2-7]+)$/i);
+	return match?.[1]?.toUpperCase() ?? null;
+};
 
 // SPEC EXTENSION (APC-005): Ariadne spec does not mention CORS.
 // Browser-based ASPE clients need CORS headers for cross-origin fetch.
@@ -75,7 +90,7 @@ aspe.post("/.well-known/aspe/post/", requireAuth, async (c) => {
 		return c.json({ error: `Invalid request: ${(err as Error).message}` }, 400);
 	}
 
-	const { action, fingerprint, profileJws } = request;
+	const { action, fingerprint, profileJws, aspeUri } = request;
 	const now = new Date();
 
 	if (action === "create") {
@@ -127,12 +142,15 @@ aspe.post("/.well-known/aspe/post/", requireAuth, async (c) => {
 			updatedAt: now,
 		});
 
-		return c.json({ fingerprint, uri: `aspe:${fingerprint}` }, 201);
+		return c.json({ fingerprint, uri: aspeUriFor(c.env.ASPE_DOMAIN, fingerprint) }, 201);
 	}
 
 	if (action === "update") {
 		if (!profileJws) {
 			return c.json({ error: "profile_jws required for update" }, 400);
+		}
+		if (!aspeUri) {
+			return c.json({ error: "aspe_uri required for update" }, 400);
 		}
 
 		try {
@@ -147,10 +165,15 @@ aspe.post("/.well-known/aspe/post/", requireAuth, async (c) => {
 			);
 		}
 
+		const targetFingerprint = parseAspeUriFingerprint(aspeUri);
+		if (!targetFingerprint) {
+			return c.json({ error: "Invalid aspe_uri" }, 400);
+		}
+
 		const [existing] = await db
 			.select()
 			.from(schema.cryptoProfile)
-			.where(eq(schema.cryptoProfile.fingerprint, fingerprint))
+			.where(eq(schema.cryptoProfile.fingerprint, targetFingerprint))
 			.limit(1);
 
 		if (!existing) {
@@ -161,13 +184,62 @@ aspe.post("/.well-known/aspe/post/", requireAuth, async (c) => {
 			return c.json({ error: "Not authorized to update this profile" }, 403);
 		}
 
-		await db
-			.update(schema.cryptoProfile)
-			.set({ profileJws, updatedAt: now })
-			.where(eq(schema.cryptoProfile.fingerprint, fingerprint));
+		if (existing.fingerprint === fingerprint) {
+			await db
+				.update(schema.cryptoProfile)
+				.set({ profileJws, updatedAt: now })
+				.where(eq(schema.cryptoProfile.fingerprint, existing.fingerprint));
+		} else {
+			if (!existing.identityId) {
+				return c.json(
+					{ error: "Cannot rotate profile keys before the sigchain is initialized" },
+					400,
+				);
+			}
 
-		return c.json({ fingerprint, uri: `aspe:${fingerprint}` });
-	}
+			const { state } = await loadVerifiedChainState(db, existing.identityId);
+			try {
+				classifyProfileUpdate(state, existing.fingerprint, fingerprint);
+			} catch (err) {
+				return c.json({ error: (err as Error).message }, 403);
+			}
+
+			const [conflictingProfile] = await db
+				.select()
+				.from(schema.cryptoProfile)
+				.where(eq(schema.cryptoProfile.fingerprint, fingerprint))
+				.limit(1);
+
+			if (conflictingProfile) {
+				return c.json({ error: "A profile already exists for the new fingerprint" }, 409);
+			}
+
+			await db.insert(schema.cryptoProfile).values({
+				fingerprint,
+				profileJws,
+				userId: user.id,
+				identityId: existing.identityId,
+				createdAt: existing.createdAt,
+				updatedAt: now,
+			});
+
+			await db
+				.update(schema.username)
+				.set({ fingerprint })
+				.where(eq(schema.username.fingerprint, existing.fingerprint));
+
+			await db
+				.update(schema.attestation)
+				.set({ fingerprint })
+				.where(eq(schema.attestation.fingerprint, existing.fingerprint));
+
+			await db
+				.delete(schema.cryptoProfile)
+				.where(eq(schema.cryptoProfile.fingerprint, existing.fingerprint));
+		}
+
+			return c.json({ fingerprint, uri: aspeUriFor(c.env.ASPE_DOMAIN, fingerprint) });
+		}
 
 	if (action === "delete") {
 		const [existing] = await db
@@ -429,7 +501,7 @@ aspe.post("/api/identity/email/challenge", requireAuth, async (c) => {
 		`,
 	});
 
-	return c.json({ challenge, email: user.email, expiresAt: expiresAt.toISOString() });
+	return c.json({ email: user.email, expiresAt: expiresAt.toISOString() });
 });
 
 // Step 2: Verify signed challenge and create attestation

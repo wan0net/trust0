@@ -1,7 +1,14 @@
+import {
+	computeLinkHash,
+	parseChainLink,
+	parseProfile,
+	verifyChain,
+} from "@trust0/identity";
 import { asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as schema from "./db/schema";
 import { type AuthEnv, requireAuth, sessionMiddleware } from "./middleware/session";
+import { assertProfileMatchesChainState } from "./policy";
 
 const exportApi = new Hono<AuthEnv>();
 
@@ -99,6 +106,20 @@ exportApi.post("/api/identity/import", requireAuth, async (c) => {
 		return c.json({ error: "Unsupported export version" }, 400);
 	}
 
+	let parsedProfile;
+	try {
+		parsedProfile = await parseProfile(body.profile.profileJws);
+	} catch (err) {
+		return c.json(
+			{ error: `Invalid profile: ${(err as Error).message}` },
+			400,
+		);
+	}
+
+	if (parsedProfile.fingerprint !== body.profile.fingerprint) {
+		return c.json({ error: "Profile fingerprint mismatch" }, 400);
+	}
+
 	// Check user doesn't already have a profile
 	const [existing] = await db
 		.select()
@@ -110,61 +131,128 @@ exportApi.post("/api/identity/import", requireAuth, async (c) => {
 		return c.json({ error: "User already has a profile. Delete it first to import." }, 409);
 	}
 
+	const [existingFingerprint] = await db
+		.select()
+		.from(schema.cryptoProfile)
+		.where(eq(schema.cryptoProfile.fingerprint, parsedProfile.fingerprint))
+		.limit(1);
+
+	if (existingFingerprint) {
+		return c.json({ error: "Profile fingerprint already exists on this instance." }, 409);
+	}
+
+	let verifiedIdentityId: string | null = null;
+	const normalizedChain: Array<{
+		id: string;
+		fingerprint: string;
+		seqno: number;
+		type: string;
+		linkJws: string;
+		prevHash: string | null;
+	}> = [];
+
+	if (body.chain.length > 0) {
+		let parsedLinks;
+		try {
+			parsedLinks = await Promise.all(
+				body.chain.map(async (link) => {
+					const parsed = await parseChainLink(link.linkJws);
+					const linkHash = await computeLinkHash(link.linkJws);
+					return { parsed, linkHash, linkJws: link.linkJws };
+				}),
+			);
+		} catch (err) {
+			return c.json(
+				{ error: `Invalid chain link: ${(err as Error).message}` },
+				400,
+			);
+		}
+
+		parsedLinks.sort((a, b) => a.parsed.seqno - b.parsed.seqno);
+
+		let chainState;
+		try {
+			chainState = await verifyChain(parsedLinks.map((link) => link.linkJws));
+		} catch (err) {
+			return c.json(
+				{ error: `Invalid sigchain: ${(err as Error).message}` },
+				400,
+			);
+		}
+
+		verifiedIdentityId = chainState.identityId;
+
+		if (body.profile.identityId && body.profile.identityId !== verifiedIdentityId) {
+			return c.json({ error: "Imported identity ID does not match sigchain" }, 400);
+		}
+
+		try {
+			assertProfileMatchesChainState(chainState, parsedProfile.fingerprint);
+		} catch (err) {
+			return c.json({ error: (err as Error).message }, 400);
+		}
+
+		normalizedChain.push(
+			...parsedLinks.map(({ parsed, linkHash, linkJws }) => ({
+				id: linkHash,
+				fingerprint: parsed.fingerprint,
+				seqno: parsed.seqno,
+				type: parsed.type,
+				linkJws,
+				prevHash: parsed.prev,
+			})),
+		);
+	} else if (body.profile.identityId) {
+		return c.json(
+			{ error: "Cannot import identity_id without a verifiable sigchain" },
+			400,
+		);
+	}
+
+	if (verifiedIdentityId) {
+		const [existingIdentity] = await db
+			.select()
+			.from(schema.sigchainLink)
+			.where(eq(schema.sigchainLink.identityId, verifiedIdentityId))
+			.limit(1);
+
+		if (existingIdentity) {
+			return c.json({ error: "Identity already exists on this instance." }, 409);
+		}
+	}
+
 	const now = new Date();
 
 	// Import profile
 	await db.insert(schema.cryptoProfile).values({
-		fingerprint: body.profile.fingerprint,
+		fingerprint: parsedProfile.fingerprint,
 		profileJws: body.profile.profileJws,
 		userId: user.id,
-		identityId: body.profile.identityId ?? null,
+		identityId: verifiedIdentityId,
 		createdAt: now,
 		updatedAt: now,
 	});
 
 	// Import chain links
-	if (body.chain.length > 0 && body.profile.identityId) {
-		for (const link of body.chain) {
-			const { computeLinkHash } = await import("@trust0/identity");
-			const linkHash = await computeLinkHash(link.linkJws);
-
-			await db
-				.insert(schema.sigchainLink)
-				.values({
-					id: linkHash,
-					identityId: body.profile.identityId,
-					fingerprint: body.profile.fingerprint,
-					seqno: link.seqno,
-					linkType: link.type,
-					linkJws: link.linkJws,
-					prevHash: null, // Could reconstruct, but the JWS contains it
-					createdAt: now,
-				})
-				.onConflictDoNothing();
-		}
+	for (const link of normalizedChain) {
+		await db.insert(schema.sigchainLink).values({
+			id: link.id,
+			identityId: verifiedIdentityId!,
+			fingerprint: link.fingerprint,
+			seqno: link.seqno,
+			linkType: link.type,
+			linkJws: link.linkJws,
+			prevHash: link.prevHash,
+			createdAt: now,
+		});
 	}
 
-	// Import attestations
-	if (body.attestations) {
-		for (const att of body.attestations) {
-			const id = `${att.type}_${body.profile.fingerprint}`;
-			await db
-				.insert(schema.attestation)
-				.values({
-					id,
-					fingerprint: body.profile.fingerprint,
-					type: att.type,
-					platform: att.platform ?? null,
-					platformUsername: att.platformUsername ?? null,
-					value: att.value,
-					attestedBy: att.attestedBy,
-					attestedAt: new Date(att.attestedAt),
-				})
-				.onConflictDoNothing();
-		}
-	}
-
-	return c.json({ imported: true, fingerprint: body.profile.fingerprint }, 201);
+	return c.json({
+		imported: true,
+		fingerprint: parsedProfile.fingerprint,
+		identityId: verifiedIdentityId,
+		ignoredAttestations: body.attestations?.length ?? 0,
+	}, 201);
 });
 
 export { exportApi as exportRoutes };
