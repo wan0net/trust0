@@ -9,6 +9,7 @@ import {
 } from "@trust0/identity";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8788";
+const ASPE_DOMAIN = import.meta.env.VITE_ASPE_DOMAIN || "trust0.app";
 
 // ── Key Storage (IndexedDB — CryptoKey objects stored as opaque handles) ────
 
@@ -104,6 +105,10 @@ export interface MyProfile {
 	updatedAt: string;
 }
 
+function getAspeUri(fingerprint: string): string {
+	return `aspe:${ASPE_DOMAIN}:${fingerprint}`;
+}
+
 export async function fetchMyProfile(): Promise<MyProfile | null> {
 	try {
 		const res = await fetch(`${API_BASE}/api/identity/my-profile`, {
@@ -168,6 +173,7 @@ export async function updateProfile(
 	description?: string,
 	avatarUrl?: string,
 	color?: string,
+	targetFingerprint?: string,
 ): Promise<void> {
 	const profileJws = await createProfile({
 		name,
@@ -183,7 +189,7 @@ export async function updateProfile(
 	const requestJws = await createRequest({
 		action: "update",
 		profileJws,
-		aspeUri: `aspe:${identity.fingerprint}`,
+		aspeUri: getAspeUri(targetFingerprint ?? identity.fingerprint),
 		key: identity.privateKey,
 		publicJWK: identity.publicJWK,
 		fingerprint: identity.fingerprint,
@@ -349,7 +355,6 @@ export async function claimUsername(
 // ── Email Challenge-Response Verification ──────────────────────────────────
 
 export async function requestEmailChallenge(): Promise<{
-	challenge: string;
 	email: string;
 	expiresAt: string;
 }> {
@@ -363,7 +368,7 @@ export async function requestEmailChallenge(): Promise<{
 		throw new Error(err.error);
 	}
 
-	return (await res.json()) as { challenge: string; email: string; expiresAt: string };
+	return (await res.json()) as { email: string; expiresAt: string };
 }
 
 export async function verifyEmailChallenge(
@@ -527,7 +532,15 @@ export async function rotateKey(
 	});
 
 	// 3. Create new profile with new key
-	await uploadProfile(newIdentity, name, claims, description);
+	await updateProfile(
+		newIdentity,
+		name,
+		claims,
+		description,
+		undefined,
+		undefined,
+		oldIdentity.fingerprint,
+	);
 
 	// 4. Append profile_update link signed by NEW key (now authorized via rotation)
 	await appendAfterAction(newIdentity, identityId, "profile_update", {
